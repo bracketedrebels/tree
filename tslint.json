@@ -1,0 +1,19 @@
+{
+	"rules": {
+		"no-unused-expression": true,
+		"no-duplicate-variable": true,
+		"curly": true,
+		"class-name": true,
+		"semicolon": ["always"],
+		"triple-equals": true,
+		"eofline": true,
+		"indent": [true, "spaces"],
+		"quotemark": [true, "single"],
+        "no-eval": true,
+        "no-internal-module": true,
+        "no-trailing-whitespace": true,
+        "no-var-keyword": true,
+		"jsdoc-format": true,
+		"max-classes-per-file": [ true, 1 ]
+	}
+}
