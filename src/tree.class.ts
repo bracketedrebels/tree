@@ -109,7 +109,7 @@ export class Tree<T extends any> {
      * @argument name - name of the child.
      * @returns current Tree instance, allowing to chain API calls.
      */
-    public removeChlid(name: string): this {
+    public removeChild(name: string): this {
         let fullChildName = this.context + '/' + name;
         if (this.store.hasEdge(this.context, fullChildName)) {
             this.store.removeEdge(this.context, fullChildName);
