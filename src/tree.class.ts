@@ -89,7 +89,7 @@ export class Tree<T extends any> {
      *           than 16 and less than 0.
      * @returns current Tree instance, allowing to chain API calls.
      */
-    public setChild(name: string, value?: T, index?: number): Tree<T> {
+    public setChild(name: string, value?: T, index?: number): this {
         if ((name.indexOf('/') + 1) || (name.indexOf('.') + 1)) {
             throw new Error('Name of node can not contain \'/\' or \'.\'');
         }
@@ -105,11 +105,11 @@ export class Tree<T extends any> {
     }
 
     /**
-     * Removing node from context children list. Left context the same.
-     * @argument nameOrIndex - name of the child or it's index.
+     * Removing child with specified name of current context. Left context the same.
+     * @argument name - name of the child.
      * @returns current Tree instance, allowing to chain API calls.
      */
-    public removeChlid(name: string): Tree<T> {
+    public removeChlid(name: string): this {
         let fullChildName = this.context + '/' + name;
         if (this.store.hasEdge(this.context, fullChildName)) {
             this.store.removeEdge(this.context, fullChildName);
@@ -121,43 +121,42 @@ export class Tree<T extends any> {
     }
 
     /**
-     * Changing the context of tree by moving from current context along the provided way.
-     * Way - is a list of nodes names or indicies, that are allowed to be mixed together.
-     * If way contains unexisted nodes and silent param is true, so it will do nothing.
-     * @example this.path(['a', 'b', 'c', 'd', 'e']);
-     *          // context - root.
-     *          // This way will lead us from root, to child 'a', then to child 'b' of node 'a',
-     *          // then to child 'c' of node 'b'... And up to the way end.
-     * @argument way - path to the desired context.
+     * Changing the context of tree to the specified path (formed according to the POSIX
+     * standard). If way contains unexisted nodes and silent param is true, so it will do nothing.
+     * @example this.path('../a/b');
+     * @example this.path('./c/d');
+     * @example this.path('/e/f');
+     * @example this.path('g/h'); // equal to './g/h';
+     * @argument path - path to the desired context.
      * @argument silent - if true, then no exception will be throwed in case of way contains
      *           unexisted nodes. Otherwise - it will.
      * @returns current Tree instance, allowing to chain API calls.
      */
-    public path(way: string[], silent = false): Tree<T> {
-        let s: string = 'root';
-        if ((way[0] === '.') || (way[0] === '..')) {
-            s = this.context;
-        }
-        for (let step of way) {
-            if (step === '..') {
-                let index = s.lastIndexOf('/');
-                if (index !== -1) {
-                    s = s.substring(0, index);
-                }
-            }
-            else if (step === '.') { }
-            else {
-                s += '/' + step;
-            }
+    public path(path: string, silent = false): this {
+        // let s: string = 'root';
+        // if ((path[0] === '.') || (path[0] === '..')) {
+        //     s = this.context;
+        // }
+        // for (let step of path) {
+        //     if (step === '..') {
+        //         let index = s.lastIndexOf('/');
+        //         if (index !== -1) {
+        //             s = s.substring(0, index);
+        //         }
+        //     }
+        //     else if (step === '.') { }
+        //     else {
+        //         s += '/' + step;
+        //     }
 
-        }
+        // }
 
-        if (this.store.node(s)) {
-            this.context = s;
-        }
-        else {
-            throw new Error('Path is incorrect');
-        }
+        // if (this.store.node(s)) {
+        //     this.context = s;
+        // }
+        // else {
+        //     throw new Error('Path is incorrect');
+        // }
         return this;
     }
 
@@ -165,7 +164,7 @@ export class Tree<T extends any> {
      * Changing context to the tree root.
      * @returns current Tree instance, allowing to chain API calls.
      */
-    public root(): Tree<T> {
+    public root(): this {
         this.context = this.rootName;
         return this;
     }
@@ -174,7 +173,7 @@ export class Tree<T extends any> {
      * Changing context to the current context parent. If context has no parent, it left the same.
      * @returns current Tree instance, allowing to chain API calls.
      */
-    public parent(): Tree<T> {
+    public parent(): this {
         if (this.context !== this.rootName) {
             this.context = this.store.predecessors(this.context)[0];
         }
