@@ -160,26 +160,6 @@ export class Tree<T extends any> {
         return this;
     }
 
-    /**
-     * Changing context to the tree root.
-     * @returns current Tree instance, allowing to chain API calls.
-     */
-    public root(): this {
-        this.context = this.rootName;
-        return this;
-    }
-
-    /**
-     * Changing context to the current context parent. If context has no parent, it left the same.
-     * @returns current Tree instance, allowing to chain API calls.
-     */
-    public parent(): this {
-        if (this.context !== this.rootName) {
-            this.context = this.store.predecessors(this.context)[0];
-        }
-        return this;
-    }
-
     constructor(private store = new Graph({ directed: true })) {
         if (!store.isDirected() || store.isCompound() || store.isMultigraph()) {
             throw new Error('Only directed noncompound graph (not a multigraph) is good for being store.');
