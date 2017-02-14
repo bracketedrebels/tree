@@ -91,7 +91,7 @@ export class Tree<T extends any> {
      */
     public setChild(name: string, value?: T, index?: number): Tree<T> {
         if ((name.indexOf('/') + 1) || (name.indexOf('.') + 1)) {
-            throw new Error('name of node cannot contain / or .');
+            throw new Error('Name of node can not contain \'/\' or \'.\'');
         }
         let uniqueName: string = this.context + '/' + name;
         let content: NodeContent<T> = {
@@ -101,7 +101,7 @@ export class Tree<T extends any> {
         };
         this.store.setNode(uniqueName, content);
         this.store.setEdge(this.context, uniqueName, this.context);
-        return;
+        return this;
     }
 
     /**
@@ -110,15 +110,14 @@ export class Tree<T extends any> {
      * @returns current Tree instance, allowing to chain API calls.
      */
     public removeChlid(name: string): Tree<T> {
-        let tmp = this.store.successors(this.context);
         let fullChildName = this.context + '/' + name;
         if (this.store.hasEdge(this.context, fullChildName)) {
             this.store.removeEdge(this.context, fullChildName);
         }
         else {
-            throw new Error('there is no edge with the same name');
+            throw new Error('There is no edge with a such name');
         }
-        return;
+        return this;
     }
 
     /**
@@ -157,10 +156,9 @@ export class Tree<T extends any> {
             this.context = s;
         }
         else {
-            console.log(s);
-            // throw new Error('Path is incorrect');
+            throw new Error('Path is incorrect');
         }
-        return;
+        return this;
     }
 
     /**
@@ -169,7 +167,7 @@ export class Tree<T extends any> {
      */
     public root(): Tree<T> {
         this.context = this.rootName;
-        return;
+        return this;
     }
 
     /**
@@ -180,7 +178,7 @@ export class Tree<T extends any> {
         if (this.context !== this.rootName) {
             this.context = this.store.predecessors(this.context)[0];
         }
-        return;
+        return this;
     }
 
     constructor(private store = new Graph({ directed: true })) {
