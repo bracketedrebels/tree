@@ -7,14 +7,11 @@ import { Graph } from 'graphlib';
 
 describe(`Tree`, () => {
 
-    let tree: Tree<any>;
-    let store: Graph;
-    let a = 'a', b = 'b', c = 'c', d = 'd', e = 'e', f = 'f', g = 'g';
-
-    beforeEach( () => tree = new Tree<any>(store = new Graph({ directed: true })) );
+    let tree: Tree<any> = new Tree();
+    let a = 'a', b = 'b', c = 'c', d = 'd';
 
     it(`should create an instance`, () => {
-        expect(() => new Tree(new Graph({ directed: true }))).toBeTruthy();
+        expect(tree).toBeTruthy();
     });
     it(`shold not accept invalid storage graphs`, () => {
         expect(() => new Tree(new Graph({ multigraph: true }))).toThrowError();
@@ -24,64 +21,60 @@ describe(`Tree`, () => {
     it(`should context by default to be root`, () => {
         expect(tree.isRoot).toBeTruthy();
     });
-    it(`should correctly change context to root`, () => {
-        expect(tree.setChild(a).isRoot).toBeFalsy();
-        expect(tree.root().isRoot).toBeTruthy();
-    });
     it(`should correctly add child`, () => {
         tree.setChild(a);
-        expect(tree.index === 0).toBeTruthy();
-        expect(tree.name === a).toBeTruthy();
-        expect(tree.value === undefined).toBeTruthy();
+        expect(tree.index).toBe(0);
+        expect(tree.name).toBe('/');
+        expect(tree.value).toBeUndefined();
+        expect(tree.isLeaf).toBeFalsy();
+        expect(tree.isRoot).toBeTruthy();
+        expect(tree.children.length).toBe(1);
+        expect(tree.children[0]).toBe(a);
+    });
+    it(`should correctly remove child`, () => {
+        tree.removeChild(a);
+        expect(tree.children.length).toBe(0);
+        expect(tree.isLeaf).toBeTruthy();
+        expect(() => tree.removeChild(b)).toThrowError();
+    });
+    it(`should correctly change context`, () => {
+        tree.setChild(a).path(a);
+        expect(tree.name).toBe(a);
         expect(tree.isLeaf).toBeTruthy();
         expect(tree.isRoot).toBeFalsy();
-        expect(tree.children.length === 0).toBeTruthy();
-        expect(tree.parent().isRoot).toBeTruthy();
+        expect(tree.children.length).toBe(0);
+        expect(tree.setChild(b).path(`./${b}`).name).toBe(b);
+        expect(tree.path(`..`).name).toBe(a);
+        expect(tree.path(`.`).name).toBe(a);
+        expect(tree.path(`/${a}`).name).toBe(a);
+        expect(tree.path(`/`).name).toBe(`/`);
+        expect(tree.path(`../..`).name).toBe(`/`);
+        expect(() => tree.path(`/i/am/not/exist`)).toThrowError();
+        expect(tree.path(`/i/am/not/exist`, true).name).toBe(`/`);
+        expect(tree.path(`../../${a}/${b}/../${b}/././../.././${a}/${b}/..`).name).toBe(a);
     });
     it(`should correctly update child`, () => {
         tree.setChild(a, 42);
-        tree.parent().setChild(a);
-        expect(tree.index === 0).toBeTruthy();
-        expect(tree.name === a).toBeTruthy();
-        expect(tree.value === 42).toBeTruthy();
-        tree.parent().setChild(a, 43);
-        expect(tree.value === 43).toBeTruthy();
-        tree.parent().setChild(b);
-        tree.parent().setChild(a, 42, 1);
-        expect(tree.value === 42).toBeTruthy();
-        expect(tree.index === 1).toBeTruthy();
-        tree.parent().setChild(b);
-        expect(tree.index === 0).toBeTruthy();
+        expect(tree.index).toBe(0);
+        expect(tree.name).toBe(a);
+        expect(tree.value).toBe(42);
+        tree.setChild(a);
+        expect(tree.value).toBe(42);
+        tree.setChild(a, 43);
+        expect(tree.value).toBe(43);
+        tree.setChild(a, 42, 1);
+        expect(tree.value).toBe(42);
+        expect(tree.index).toBe(1);
     });
     it(`should correctly build a chain of children`, () => {
-        tree.setChild(a).setChild(b).setChild(c).setChild(d);
-        expect(tree.name === d).toBeTruthy();
-        expect(tree.parent().name === c).toBeTruthy();
-        expect(tree.parent().name === b).toBeTruthy();
-        expect(tree.parent().name === a).toBeTruthy();
-        expect(tree.isRoot).toBeTruthy();
-    });
-    it(`should correctly traverse tree via path`, () => {
-        tree.setChild(a).setChild(b).setChild(c).setChild(d)
-            .parent().setChild(e).setChild(f)
-            .parent().setChild(g)
-            .root();
-
-        expect(tree.path([a, b, c, d]).name === d).toBeTruthy();
-        expect(tree.parent().path([e, f]).name === f).toBeTruthy();
-        expect(tree.parent().path([g]).name === g).toBeTruthy();
-    });
-    it(`should correctly remove child`, () => {
-        tree.setChild(a)
-        .root().setChild(b)
-        .root().setChild(c)
-        .root();
-
-        expect(tree.children.length === 3).toBeTruthy();
-        expect(tree.removeChlid('b').children.length === 2).toBeTruthy();
-        tree.setChild(a);
-        expect(tree.index === 0).toBeTruthy();
-        tree.setChild(c);
-        expect(tree.index === 1).toBeTruthy();
+        tree.setChild(a).path(a)
+            .setChild(b).path(b)
+            .setChild(c).path(c)
+            .setChild(d).path(d);
+        expect(tree.name).toBe(d);
+        expect(tree.path('..').name).toBeTruthy(c);
+        expect(tree.path('..').name).toBeTruthy(b);
+        expect(tree.path('..').name).toBeTruthy(a);
+        expect(tree.path('..').isRoot).toBeTruthy();
     });
 });
