@@ -59,25 +59,14 @@ export class Tree<T extends any> {
      * @returns true, if context has no children. False, otherwise.
      */
     public get isLeaf(): boolean {
-        let tmp = this.store.successors(this.context);
-        if (typeof (tmp) === 'object') {
-            if (!tmp.length) {
-                return true;
-            };
-        }
-        return false;
+        return (this.store.sinks().indexOf(this.context) >= 0);
     }
 
     /**
      * Detecting whether context is root or not.
      * @returns true, if context has no parent. False, otherwise.
      */
-    public get isRoot(): boolean {
-        if (this.context === this.rootName) {
-            return true;
-        }
-        return false;
-    }
+    public get isRoot(): boolean { return (this.context === this.rootName); }
 
     /**
      * Setting the child for context. If no child with such a name exists, so it will be added.
@@ -91,7 +80,7 @@ export class Tree<T extends any> {
      */
     public setChild(name: string, value?: T, index?: number): this {
         if ((name.indexOf('/') + 1) || (name.indexOf('.') + 1)) {
-            throw new Error('Name of node can not contain \'/\' or \'.\'');
+            throw new Error(`Name of node can not contain '/' or '.'`);
         }
         let uniqueName: string = this.context + '/' + name;
         let content: NodeContent<T> = {
