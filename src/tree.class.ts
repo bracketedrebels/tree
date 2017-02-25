@@ -1,9 +1,8 @@
 import { Graph } from 'graphlib';
 
 export interface NodeContent<T> {
-    nonUniqueName: string;
+    name: string;
     value: T | void;
-    index?: number;
 }
 
 /**
@@ -27,70 +26,43 @@ export class Tree<T extends any> {
      * Getting context name.
      * @returns context name.
      */
-    public get name(): string { return this.context; }
-
-    /**
-     * Getting context index.
-     * @returns context index - position within the ordered list of context parent's children
-     */
-    public get index(): number { return this.store.node(this.context).index; }
+    public get name(): string { return this.store.node(this.context).name; }
 
     /**
      * Getting context children list.
-     * @returns list of children name, ascending ordered by their index.
+     * @returns list of children name.
      */
     public get children(): string[] {
-        let tmp = this.store.successors(this.context);
-        if (typeof (tmp) === 'object') {
-            let ans: string[] = [];
-            for (let i in tmp) {
-                let index = tmp[i].lastIndexOf('/');
-                ans[i] = tmp[i].substring(index + 1);
-            }
-            return ans;
+        let tmp = <string[]>this.store.successors(this.context);
+        let ans: string[] = [];
+        for (let i in tmp) {
+            ans[i] = this.store.node(tmp[i]).name;
         }
-        else {
-            throw new Error('incorrect node or context');
-        }
+        return ans;
     }
 
     /**
      * Detecting whether context is leaf or not.
      * @returns true, if context has no children. False, otherwise.
      */
-    public get isLeaf(): boolean {
-        return (this.store.sinks().indexOf(this.context) >= 0);
-    }
+    public get isLeaf(): boolean { return this.store.sinks().indexOf(this.context) >= 0; }
 
     /**
      * Detecting whether context is root or not.
      * @returns true, if context has no parent. False, otherwise.
      */
-    public get isRoot(): boolean { return (this.context === this.rootName); }
+    public get isRoot(): boolean { return this.context === this.rootName; }
 
     /**
      * Setting the child for context. If no child with such a name exists, so it will be added.
-     * If there is already child with such a name, so it's value and index will be updated.
+     * If there is already child with such a name, so it's value will be updated.
      * @argument name - name of the child. Note, that name must be unique within the parents children list.
      * @argument value - data to be assigned to the child.
-     * @argument index - index of the child. By default index starts from zero and limited by children
-     *           count. It means, that when you are adding 17-th child, you can not sepcify index more
-     *           than 16 and less than 0.
      * @returns current Tree instance, allowing to chain API calls.
      */
-    public setChild(name: string, value?: T, index?: number): this {
-        if ((name.indexOf('/') + 1) || (name.indexOf('.') + 1)) {
-            throw new Error(`Name of node can not contain '/' or '.'`);
-        }
-        let uniqueName: string = this.context + '/' + name;
-        let content: NodeContent<T> = {
-            nonUniqueName: name,
-            value: value,
-            index: index
-        };
-        this.store.setNode(uniqueName, content);
-        this.store.setEdge(this.context, uniqueName, this.context);
-        return this;
+    public setChild(name: string, value?: T): this {
+        if (arguments.length < 2) { return this.CreateTreeNode(name, this.context); }
+        return this.CreateTreeNode(name, this.context, value);
     }
 
     /**
@@ -98,14 +70,13 @@ export class Tree<T extends any> {
      * @argument name - name of the child.
      * @returns current Tree instance, allowing to chain API calls.
      */
-    public removeChild(name: string): this {
-        let fullChildName = this.context + '/' + name;
+    public removeChild(name: string, removeSubtree = false) {
+        let fullChildName = this.context + name + '/';
         if (this.store.hasEdge(this.context, fullChildName)) {
-            this.store.removeEdge(this.context, fullChildName);
+            if (removeSubtree) { this.removeSubtree(fullChildName); }
+            else { this.removeLeaf(fullChildName); }
         }
-        else {
-            throw new Error('There is no edge with a such name');
-        }
+        else { throw new Error('There is no child with a such name'); }
         return this;
     }
 
@@ -113,7 +84,7 @@ export class Tree<T extends any> {
      * Changing the context of tree to the specified path (formed according to the POSIX
      * standard). If way contains unexisted nodes and silent param is true, so it will do nothing.
      * @example this.path('../a/b');
-     * @example this.path('./c/d');
+     * @example this.path('./c//d');
      * @example this.path('/e/f');
      * @example this.path('g/h'); // equal to './g/h';
      * @argument path - path to the desired context.
@@ -122,39 +93,82 @@ export class Tree<T extends any> {
      * @returns current Tree instance, allowing to chain API calls.
      */
     public path(path: string, silent = false): this {
-        // let s: string = 'root';
-        // if ((path[0] === '.') || (path[0] === '..')) {
-        //     s = this.context;
-        // }
-        // for (let step of path) {
-        //     if (step === '..') {
-        //         let index = s.lastIndexOf('/');
-        //         if (index !== -1) {
-        //             s = s.substring(0, index);
-        //         }
-        //     }
-        //     else if (step === '.') { }
-        //     else {
-        //         s += '/' + step;
-        //     }
-
-        // }
-
-        // if (this.store.node(s)) {
-        //     this.context = s;
-        // }
-        // else {
-        //     throw new Error('Path is incorrect');
-        // }
+        let finalPath = this.parsePathString(path);
+        if (this.store.node(finalPath)) { this.context = finalPath; }
+        else { if (!silent) { throw new Error('Path is incorrect'); } }
         return this;
+    }
+
+    // @internal
+    private CreateTreeNode(name: string, parent: string, value?: T): this {
+        if ((name.includes('/')) || (name.includes('.'))) {
+            throw new Error(`Name of node can not contain '/' or '.'`);
+        }
+        let uniqueName: string = parent + name + '/';
+        let content: NodeContent<T> = {
+            name: name,
+            value: value
+        };
+        if (arguments.length < 3) {
+            if (this.store.node(uniqueName)) {
+                return this;
+            }
+        }
+        this.store.setNode(uniqueName, content);
+        this.store.setEdge(parent, uniqueName);
+        return this;
+    }
+
+    // @internal
+    private removeSubtree(subtreeRootName: string): this {
+        this.store = this.store.filterNodes(
+            function (nodeName: string): boolean {
+                if (nodeName.includes(subtreeRootName)) {
+                    return false;
+                }
+                return true;
+            }
+        );
+        return this;
+    }
+
+    // @internal
+    private removeLeaf(leafFullName: string): this {
+        let currentContext = this.context;
+        this.context = leafFullName;
+        if (this.isLeaf) {
+            this.store.removeNode(leafFullName);
+        }
+        else {
+            throw new Error('This is not a leaf');
+        }
+        this.context = currentContext;
+        return this;
+    }
+
+    // @internal
+    private parsePathString(path: string): string {
+        if (path[0] !== '/') { path = this.context + '/' + path; }
+        let pathArray = path.split('/');
+        let finalPathArray: string[] = [];
+        for (let i = 0; i < pathArray.length; ++i) {
+            switch (pathArray[i]) {
+                case '..': finalPathArray.pop(); break;
+                case '.': break;
+                case '': break;
+                default: finalPathArray.push(pathArray[i]);
+            }
+        }
+        if (finalPathArray.length !== 0) { return '/' + finalPathArray.join('/') + '/'; }
+        else { return '/'; }
     }
 
     constructor(private store = new Graph({ directed: true })) {
         if (!store.isDirected() || store.isCompound() || store.isMultigraph()) {
             throw new Error('Only directed noncompound graph (not a multigraph) is good for being store.');
         }
-        this.context = 'root';
-        this.store.setNode(this.context, { index: 0 });
+        this.context = '/';
+        this.store.setNode(this.context, { name: this.context });
         this.rootName = this.context;
     }
 }
