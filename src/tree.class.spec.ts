@@ -56,14 +56,11 @@ describe(`Tree`, () => {
         tree.setChild(a, 42).path(a);
         expect(tree.name).toBe(a);
         expect(tree.value).toBe(42);
-        tree.path('..');
-        tree.setChild(a).path(a);
+        tree.path('..').setChild(a).path(a);
         expect(tree.value).toBe(42);
-        tree.path('..');
-        tree.setChild(a, 43).path(a);
+        tree.path('..').setChild(a, 43).path(a);
         expect(tree.value).toBe(43);
-        tree.path('..');
-        tree.setChild(a, 42).path(a);
+        tree.path('..').setChild(a, 42).path(a);
         expect(tree.value).toBe(42);
     });
     it(`should correctly build a chain of children`, () => {
