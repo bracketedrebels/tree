@@ -1,10 +1,5 @@
 import { Graph } from 'graphlib';
 
-export interface NodeContent<T> {
-    name: string;
-    value: T | void;
-}
-
 /**
  * Tree data structure implemented over the graph store.
  * Behaviour of tree is based on changing context. All methods may change the context of tree.
@@ -33,19 +28,14 @@ export class Tree<T extends any> {
      * @returns list of children name.
      */
     public get children(): string[] {
-        let tmp = <string[]>this.store.successors(this.context);
-        let ans: string[] = [];
-        for (let i in tmp) {
-            ans[i] = this.store.node(tmp[i]).name;
-        }
-        return ans;
+        return (<string[]>this.store.successors(this.context)).map(fullName => this.store.node(fullName).name);
     }
 
     /**
      * Detecting whether context is leaf or not.
      * @returns true, if context has no children. False, otherwise.
      */
-    public get isLeaf(): boolean { return this.store.sinks().indexOf(this.context) >= 0; }
+    public get isLeaf(): boolean { return this.isNodeLeaf(this.context); }
 
     /**
      * Detecting whether context is root or not.
@@ -61,8 +51,8 @@ export class Tree<T extends any> {
      * @returns current Tree instance, allowing to chain API calls.
      */
     public setChild(name: string, value?: T): this {
-        if (arguments.length < 2) { return this.CreateTreeNode(name, this.context); }
-        return this.CreateTreeNode(name, this.context, value);
+        if (arguments.length < 2) { return this.createNode(name, this.context); }
+        return this.createNode(name, this.context, value);
     }
 
     /**
@@ -70,7 +60,8 @@ export class Tree<T extends any> {
      * @argument name - name of the child.
      * @returns current Tree instance, allowing to chain API calls.
      */
-    public removeChild(name: string, removeSubtree = false) {
+    public removeChild(name: string, removeSubtree = false): this {
+        this.validateName(name);
         let fullChildName = this.context + name + '/';
         if (this.store.hasEdge(this.context, fullChildName)) {
             if (removeSubtree) { this.removeSubtree(fullChildName); }
@@ -93,62 +84,43 @@ export class Tree<T extends any> {
      * @returns current Tree instance, allowing to chain API calls.
      */
     public path(path: string, silent = false): this {
-        let finalPath = this.parsePathString(path);
-        if (this.store.node(finalPath)) { this.context = finalPath; }
-        else { if (!silent) { throw new Error('Path is incorrect'); } }
+        let finalPath = this.parsePath(path);
+        if (this.store.hasNode(finalPath)) { this.context = finalPath; }
+        else { if (!silent) { throw new Error('Path is incorrect.'); } }
         return this;
     }
 
     // @internal
-    private CreateTreeNode(name: string, parent: string, value?: T): this {
-        if ((name.includes('/')) || (name.includes('.'))) {
-            throw new Error(`Name of node can not contain '/' or '.'`);
-        }
+    private createNode(name: string, parent: string, value?: T): this {
+        this.validateName(name);
         let uniqueName: string = parent + name + '/';
-        let content: NodeContent<T> = {
-            name: name,
-            value: value
-        };
-        if (arguments.length < 3) {
-            if (this.store.node(uniqueName)) {
-                return this;
-            }
-        }
-        this.store.setNode(uniqueName, content);
-        this.store.setEdge(parent, uniqueName);
+        if ((arguments.length < 3) && (this.store.hasNode(uniqueName))) { return this; }
+        this.store.setNode(uniqueName, { name: name, value: value }).setEdge(parent, uniqueName);
         return this;
     }
 
     // @internal
     private removeSubtree(subtreeRootName: string): this {
         this.store = this.store.filterNodes(
-            function (nodeName: string): boolean {
-                if (nodeName.includes(subtreeRootName)) {
-                    return false;
-                }
-                return true;
-            }
+            function (nodeName: string): boolean { return !nodeName.startsWith(subtreeRootName); }
         );
         return this;
     }
 
     // @internal
     private removeLeaf(leafFullName: string): this {
-        let currentContext = this.context;
-        this.context = leafFullName;
-        if (this.isLeaf) {
+        if (this.isNodeLeaf(leafFullName)) {
             this.store.removeNode(leafFullName);
         }
         else {
             throw new Error('This is not a leaf');
         }
-        this.context = currentContext;
         return this;
     }
 
     // @internal
-    private parsePathString(path: string): string {
-        if (path[0] !== '/') { path = this.context + '/' + path; }
+    private parsePath(path: string): string {
+        if (!path.startsWith('/')) { path = this.context + path; }
         let pathArray = path.split('/');
         let finalPathArray: string[] = [];
         for (let i = 0; i < pathArray.length; ++i) {
@@ -162,6 +134,16 @@ export class Tree<T extends any> {
         if (finalPathArray.length !== 0) { return '/' + finalPathArray.join('/') + '/'; }
         else { return '/'; }
     }
+
+    // @internal
+    private validateName(name: string): void {
+        if ((name.includes('/')) || (name.includes('.'))) {
+            throw new Error(`Name of node can not contain '/' or '.' .`);
+        }
+    }
+
+    // @internal
+    private isNodeLeaf(node: string): boolean { return this.store.sinks().indexOf(node) >= 0; }
 
     constructor(private store = new Graph({ directed: true })) {
         if (!store.isDirected() || store.isCompound() || store.isMultigraph()) {
