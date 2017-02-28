@@ -28,6 +28,7 @@ export class Tree<T extends any> {
      * @returns list of children name.
      */
     public get children(): string[] {
+        // this.store.successors(this.context) will never return void, cause this.context is always correct name of graph node.
         return (<string[]>this.store.successors(this.context)).map(fullName => this.store.node(fullName).name);
     }
 
@@ -49,6 +50,7 @@ export class Tree<T extends any> {
      * @argument name - name of the child. Note, that name must be unique within the parents children list.
      * @argument value - data to be assigned to the child.
      * @returns current Tree instance, allowing to chain API calls.
+     * @throws {Error} when name is invalid
      */
     public setChild(name: string, value?: T): this {
         if (arguments.length < 2) { return this.createNode(name, this.context); }
@@ -59,6 +61,8 @@ export class Tree<T extends any> {
      * Removing child with specified name of current context. Left context the same.
      * @argument name - name of the child.
      * @returns current Tree instance, allowing to chain API calls.
+     * @throws {Error} when name is invalid
+     * @throws {Error} when node is not a leaf, and removeSubtree is false;
      */
     public removeChild(name: string, removeSubtree = false): this {
         this.validateName(name);
@@ -67,7 +71,7 @@ export class Tree<T extends any> {
             if (removeSubtree) { this.removeSubtree(fullChildName); }
             else { this.removeLeaf(fullChildName); }
         }
-        else { throw new Error('There is no child with a such name'); }
+        else { throw new Error('There is no child with such a name.'); }
         return this;
     }
 
@@ -82,6 +86,7 @@ export class Tree<T extends any> {
      * @argument silent - if true, then no exception will be throwed in case of way contains
      *           unexisted nodes. Otherwise - it will.
      * @returns current Tree instance, allowing to chain API calls.
+     * @throws {Error} in non silent mode, when path is incorrect
      */
     public path(path: string, silent = false): this {
         let finalPath = this.parsePath(path);
@@ -113,7 +118,7 @@ export class Tree<T extends any> {
             this.store.removeNode(leafFullName);
         }
         else {
-            throw new Error('This is not a leaf');
+            throw new Error('This is not a leaf.');
         }
         return this;
     }
