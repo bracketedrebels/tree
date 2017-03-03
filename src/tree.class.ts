@@ -107,7 +107,7 @@ export class Tree<T extends any> {
     // @internal
     private removeSubtree(subtreeRootName: string): this {
         this.store = this.store.filterNodes(
-            function (nodeName: string): boolean { return !nodeName.startsWith(subtreeRootName); }
+            nodeName => !nodeName.startsWith(subtreeRootName)
         );
         return this;
     }
