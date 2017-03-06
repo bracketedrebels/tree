@@ -1,0 +1,7 @@
+node_modules
+.vscode
+src
+.gitignore
+.travis.yml
+dist/*.spec.js
+dist/*.spec.d.ts
