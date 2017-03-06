@@ -11,12 +11,13 @@ node_js:
 branches:
   only:
   - master
+  - develop
 install:
 - npm install
 before_script:
 - npm prune
 - npm run build
 script:
-- if [ "$TRAVIS_EVENT_TYPE" = "pull_request" ]; then npm run test; fi
+- if [[ "$TRAVIS_EVENT_TYPE" == "pull_request" ]]; then npm run test; fi
 after_success:
-- if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then npm run release; fi
+- if [[ "$TRAVIS_EVENT_TYPE" == "push" && "$TRAVIS_BRANCH" == "master" ]]; then npm run release; fi
