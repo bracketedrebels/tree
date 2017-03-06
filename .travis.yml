@@ -1,0 +1,22 @@
+language: node_js
+cache:
+  directories:
+  - node_modules
+notifications:
+  email: false
+  slack:
+    secure: cfuSZzuGXix6SHQuE6GNp+44HWka3w80zNblN8d/Rpe+u6+8aODzFwhKTVBWk9fXKRq1HHFnu8jdusWt0dsmejGlTNuIUuHrspK+rfyxI+VzcpwmHBo4cIiATloqO0q3rmxLKCuBqkcgRiu/5uCZ7ANZbSK89mFyutwX0iiFtYYoAs4EK/6Kx3QoDuMuUZTgAAPGLyfBb9ok0LmYvAnkMTJQtYD6nzEwR91Akdm9Z2DAQm+WIceLM648mgrPkG8BnQZrxhDStFxbOfwz65jEzSTXw79HAiwec6P21n9p1eaLVvu0yoFR3tdMQca3AkXiCJC7z+X4AHtxdVdIuJvD9OTgl3iRGrjGAIF9dHDwGGy7802eQMMMfWRZ8vv9ciEXFPoqVuDSLFLQCA/B3Ty5HRA2PiEd+mzw7Cg+0gFqfup9HY6h9tBYuupJYzJG2JxfrTPBdEe1VXZEoi2LDcU0yEpW8sSJJPyRACb3OkeM4NYGbUkKGpsqomrIcKYF7vDn3gszLPVfjowqLB6ZCW9iRcjeVcFXoRFkQ6pkqgX1ahvvoFS0fp446Gw+FBY6KYlXYYEHTuFfcw92U968aN6la7qMkM/9Twg0ZbaRrhLVO5uOxQ5mmGq47LGfQhbnFKfqjpGnnA8pJmLx089q/VExd043DzqmG2fxcXXtEgC5MgM=
+node_js:
+- '6'
+branches:
+  only:
+  - master
+install:
+- npm install
+before_script:
+- npm prune
+- npm run build
+script:
+- if [ "$TRAVIS_EVENT_TYPE" = "pull_request" ]; then npm run test; fi
+after_success:
+- if [ "$TRAVIS_EVENT_TYPE" = "push" ]; then npm run release; fi
