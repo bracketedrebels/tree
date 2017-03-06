@@ -29,7 +29,7 @@ export class Tree<T extends any> {
      */
     public get children(): string[] {
         // this.store.successors(this.context) will never return void, cause this.context is always correct name of graph node.
-        return (<string[]>this.store.successors(this.context)).map(fullName => this.store.node(fullName).name);
+        return (this.store.successors(this.context) as string[]).map(fullName => this.store.node(fullName).name);
     }
 
     /**
@@ -89,7 +89,7 @@ export class Tree<T extends any> {
      * @throws {Error} in non silent mode, when path is incorrect
      */
     public path(path: string, silent = false): this {
-        let finalPath = this.parsePath(path);
+        let finalPath = this.normalizePath(path);
         if (this.store.hasNode(finalPath)) { this.context = finalPath; }
         else { if (!silent) { throw new Error('Path is incorrect.'); } }
         return this;
@@ -124,7 +124,7 @@ export class Tree<T extends any> {
     }
 
     // @internal
-    private parsePath(path: string): string {
+    private normalizePath(path: string): string {
         if (!path.startsWith('/')) { path = this.context + path; }
         let pathArray = path.split('/');
         let finalPathArray: string[] = [];
