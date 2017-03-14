@@ -1,4 +1,5 @@
 import { Graph } from 'graphlib';
+import { ROOT, SEPARATOR, CURRENT, PARENT } from './tree.consts';
 
 /**
  * Tree data structure implemented over the graph store.
@@ -7,8 +8,6 @@ import { Graph } from 'graphlib';
  * After creating a tree context became the root of the tree.
  */
 export class Tree<T extends any> {
-    private context: string;
-    private rootName: string;
     /**
      * Getting context value.
      * @returns context value or undefined if no value assigned.
@@ -49,7 +48,7 @@ export class Tree<T extends any> {
      * Detecting whether context is root or not.
      * @returns true, if context has no parent. False, otherwise.
      */
-    public get isRoot(): boolean { return this.context === this.rootName; }
+    public get isRoot(): boolean { return this.context === ROOT; }
 
     /**
      * Setting the child for context. If no child with such a name exists, so it will be added.
@@ -60,8 +59,10 @@ export class Tree<T extends any> {
      * @throws {Error} when name is invalid
      */
     public setChild(name: string, value?: T): this {
-        if (arguments.length < 2) { return this.createNode(name, this.context); }
-        return this.createNode(name, this.context, value);
+        this.validateName(name);
+        return arguments.length < 2
+            ? this.createNode(name, this.context)
+            : this.createNode(name, this.context, value);
     }
 
     /**
@@ -73,7 +74,7 @@ export class Tree<T extends any> {
      */
     public removeChild(name: string, removeSubtree = false): this {
         this.validateName(name);
-        let fullChildName = this.context + name + '/';
+        let fullChildName = `${this.context}${SEPARATOR}${name}`;
         if (this.store.hasEdge(this.context, fullChildName)) {
             if (removeSubtree) { this.removeSubtree(fullChildName); }
             else { this.removeLeaf(fullChildName); }
@@ -102,12 +103,25 @@ export class Tree<T extends any> {
         return this;
     }
 
+    constructor(private store = new Graph({ directed: true })) {
+        if (!store.isDirected() || store.isCompound() || store.isMultigraph()) {
+            throw new Error('Only directed noncompound graph (not a multigraph) is good for being store.');
+        }
+        this.context = ROOT;
+        this.store.setNode(ROOT, { name: ROOT });
+    }
+
+
+    
+    private context: string;
+
     // @internal
-    private createNode(name: string, parent: string, value?: T): this {
-        this.validateName(name);
-        let uniqueName: string = parent + name + '/';
+    private createNode(validName: string, parent: string, value?: T): this {
+        let uniqueName: string = `${parent}${SEPARATOR}${validName}`;
         if ((arguments.length < 3) && (this.store.hasNode(uniqueName))) { return this; }
-        this.store.setNode(uniqueName, { name: name, value: value }).setEdge(parent, uniqueName);
+        this.store
+            .setNode(uniqueName, { name: validName, value: value })
+            .setEdge(parent, uniqueName);
         return this;
     }
 
@@ -132,37 +146,22 @@ export class Tree<T extends any> {
 
     // @internal
     private normalizePath(path: string): string {
-        if (!path.startsWith('/')) { path = this.context + path; }
-        let pathArray = path.split('/');
-        let finalPathArray: string[] = [];
-        for (let i = 0; i < pathArray.length; ++i) {
-            switch (pathArray[i]) {
-                case '..': finalPathArray.pop(); break;
-                case '.': break;
-                case '': break;
-                default: finalPathArray.push(pathArray[i]);
-            }
-        }
-        if (finalPathArray.length !== 0) { return '/' + finalPathArray.join('/') + '/'; }
-        else { return '/'; }
+        return `${SEPARATOR}${
+            (path.startsWith(SEPARATOR) ? path : `${this.context}${SEPARATOR}${path}`)
+            .split(SEPARATOR)
+            .filter( v => !!v && v !== CURRENT)
+            .reduce( (acc, v) => (v === PARENT ? acc.pop() : acc.push(v), acc), [] )
+            .join(SEPARATOR)
+        }`;
     }
 
     // @internal
     private validateName(name: string): void {
-        if ((name.includes('/')) || (name.includes('.'))) {
-            throw new Error(`Name of node can not contain '/' or '.' .`);
+        if (name.includes(SEPARATOR) || name.includes(CURRENT) || name.includes(PARENT)) {
+            throw new Error(`Name of node can not contain neither '${SEPARATOR}' nor '${CURRENT}' nor '${PARENT}'.`);
         }
     }
 
     // @internal
     private isNodeLeaf(node: string): boolean { return this.store.sinks().indexOf(node) >= 0; }
-
-    constructor(private store = new Graph({ directed: true })) {
-        if (!store.isDirected() || store.isCompound() || store.isMultigraph()) {
-            throw new Error('Only directed noncompound graph (not a multigraph) is good for being store.');
-        }
-        this.context = '/';
-        this.store.setNode(this.context, { name: this.context });
-        this.rootName = this.context;
-    }
 }
