@@ -24,11 +24,18 @@ export class Tree<T extends any> {
     public get name(): string { return this.store.node(this.context).name; }
 
     /**
+     * Getting context
+     * @return context
+     */
+    public get ctx(): string { return this.context; }
+
+    /**
      * Getting context children list.
      * @returns list of children name.
      */
     public get children(): string[] {
-        // this.store.successors(this.context) will never return void, cause this.context is always correct name of graph node.
+        // this.store.successors(this.context) will never return void,
+        // because this.context is always correct name of graph node.
         return (this.store.successors(this.context) as string[]).map(fullName => this.store.node(fullName).name);
     }
 
