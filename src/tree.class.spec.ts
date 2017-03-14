@@ -8,7 +8,10 @@ import { Graph } from 'graphlib';
 describe(`Tree`, () => {
 
     let tree: Tree<any> = new Tree();
-    let a = 'a', b = 'b', c = 'c', d = 'd';
+    let a = 'a';
+    let b = 'b';
+    let c = 'c';
+    let d = 'd';
 
     it(`should create an instance`, () => {
         expect(tree).toBeTruthy();
@@ -38,19 +41,29 @@ describe(`Tree`, () => {
     });
     it(`should correctly change context`, () => {
         tree.setChild(a).path(a);
-        expect(tree.name).toBe(a);
+        expect(tree.path(`/`).ctx).toBe(`/`);
+        expect(tree.setChild(a).path(a).name).toBe(a);
+        expect(tree.ctx).toBe(`/${a}`)
         expect(tree.isLeaf).toBeTruthy();
         expect(tree.isRoot).toBeFalsy();
         expect(tree.children.length).toBe(0);
         expect(tree.setChild(b).path(`./${b}`).name).toBe(b);
+        expect(tree.ctx).toBe(`/${a}/${b}`);
         expect(tree.path(`..`).name).toBe(a);
+        expect(tree.ctx).toBe(`/${a}`);
         expect(tree.path(`.`).name).toBe(a);
+        expect(tree.ctx).toBe(`/${a}`);
         expect(tree.path(`/${a}`).name).toBe(a);
+        expect(tree.ctx).toBe(`/${a}`);
         expect(tree.path(`/`).name).toBe(`/`);
+        expect(tree.ctx).toBe(`/`);
         expect(tree.path(`../..`).name).toBe(`/`);
+        expect(tree.ctx).toBe(`/`);
         expect(() => tree.path(`/i/am/not/exist`)).toThrowError();
         expect(tree.path(`/i/am/not/exist`, true).name).toBe(`/`);
+        expect(tree.ctx).toBe(`/`);
         expect(tree.path(`../../${a}/${b}/../${b}/././../.././${a}/${b}/..`).name).toBe(a);
+        expect(tree.ctx).toBe(`/${a}`);
     });
     it(`should correctly update child`, () => {
         tree.setChild(a, 42).path(a);
