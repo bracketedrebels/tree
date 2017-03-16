@@ -74,7 +74,7 @@ export class Tree<T extends any> {
      */
     public removeChild(name: string, removeSubtree = false): this {
         this.validateName(name);
-        let fullChildName = `${this.context}${SEPARATOR}${name}`;
+        let fullChildName = this.normalizePath(name);
         if (this.store.hasEdge(this.context, fullChildName)) {
             if (removeSubtree) { this.removeSubtree(fullChildName); }
             else { this.removeLeaf(fullChildName); }
@@ -117,7 +117,7 @@ export class Tree<T extends any> {
 
     // @internal
     private createNode(validName: string, parent: string, value?: T): this {
-        let uniqueName: string = `${parent}${SEPARATOR}${validName}`;
+        let uniqueName = this.normalizePath(validName);
         if ((arguments.length < 3) && (this.store.hasNode(uniqueName))) { return this; }
         this.store
             .setNode(uniqueName, { name: validName, value: value })
