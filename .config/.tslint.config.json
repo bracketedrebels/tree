@@ -2,5 +2,27 @@
     "$schema": "http://json.schemastore.org/tslint",
     "extends": [
         "../node_modules/typescript-standard/tslint.json"
-    ]
+    ],
+    "rules": {
+        "member-ordering": [
+            true,
+            {
+                "order": [
+                "public-static-field",
+                "public-static-method",
+                "public-instance-field",
+                "public-instance-method",
+                "constructor",
+                "protected-static-field",
+                "protected-static-method",
+                "protected-instance-field",
+                "protected-instance-method",
+                "private-static-field",
+                "private-static-method",
+                "private-instance-field",
+                "private-instance-method"
+                ]
+            }
+        ]
+    }
 }
